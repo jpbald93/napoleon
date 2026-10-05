@@ -99,7 +99,7 @@ Desargues, Monge, Simson, Napoleon and Lami in Lean 4* (J. Bald, draft, 2026).
   title        = {Napoleon's theorem in Lean 4},
   year         = {2026},
   howpublished = {\url{https://github.com/jpbald93/napoleon}},
-  note         = {Lean 4 + Mathlib v4.33.1. Commit: [TODO]}
+  note         = {Lean 4 + Mathlib v4.33.1. Commit: 2b65032ed801810ae47e22843e8d41a45cda27f6}
 }
 ```
 
