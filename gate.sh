@@ -19,7 +19,7 @@ export PATH="$HOME/.elan/bin:$PATH"
 cd "$(dirname "$0")" || exit 1
 NS="Napoleon"
 LIB="Napoleon"
-REQUIRED="Napoleon.Ga Napoleon.Gb Napoleon.Gc Napoleon.apex Napoleon.apex_equilateral Napoleon.apex_outward Napoleon.centroid Napoleon.napoleon_general Napoleon.napoleon_inner Napoleon.napoleon_outer Napoleon.signedArea Napoleon.ωi Napoleon.ωo"
+REQUIRED="Napoleon.Ga Napoleon.Ga_eq_centroid Napoleon.Gb Napoleon.Gb_eq_centroid Napoleon.Gc Napoleon.Gc_eq_centroid Napoleon.apex Napoleon.apex_eq_rotation Napoleon.apex_equilateral Napoleon.apex_outward Napoleon.centroid Napoleon.centroid_eq_finset_centroid Napoleon.napoleon_general Napoleon.napoleon_inner Napoleon.napoleon_outer Napoleon.signedArea Napoleon.signedArea_eq_areaForm Napoleon.ωi Napoleon.ωi_eq_exp Napoleon.ωo Napoleon.ωo_eq_exp"
 SOURCES="Napoleon/*.lean Napoleon.lean"
 # Never fetch: the pinned Mathlib checkout must already be present.
 [ -e .lake/packages/mathlib ] || { echo "FAIL: Mathlib packages missing (run setup by hand)"; exit 1; }

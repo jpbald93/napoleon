@@ -10,7 +10,7 @@ and the inner Napoleon triangles, stated with distances.
 (outer) or `ωi = e^(iπ/3)` (inner); `Ga, Gb, Gc` are the centroids. The key step is
 `Gb − Ga = ω (Gc − Ga)`, a `linear_combination` certificate.
 
-**Status:** all statements proved, with no `sorry`. `gate.sh` checks 13 named declarations.
+**Status:** all statements proved, with no `sorry`. `gate.sh` checks 21 named declarations.
 
 ## Main statements
 
@@ -38,7 +38,7 @@ The gate fails if any of the following is true:
 - a named declaration is missing, or has an extra report;
 - a named declaration depends on anything other than `propext`, `Classical.choice` and `Quot.sound`.
 
-Output: `PASS (13 declarations, standard axioms only)`. Some of these are definitions, which may
+Output: `PASS (21 declarations, standard axioms only)`. Some of these are definitions, which may
 use a subset of the three axioms.
 
 `tests/tamper.sh` plants six kinds of fake proof in scratch copies (in `Napoleon/Basic.lean`) and checks
