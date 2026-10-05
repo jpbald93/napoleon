@@ -1,0 +1,9 @@
+.lake/
+__pycache__/
+*.pyc
+build.log
+ax.log
+ax.out
+*.tmp
+start.t
+.gatecheck_*
