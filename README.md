@@ -91,7 +91,7 @@ responsible for the result. The Lean kernel checks every proof.
 ## Citation
 
 This repository accompanies the paper *Classical plane geometry by coordinate certificates:
-Desargues, Monge, Simson, Napoleon and Lami in Lean 4* (J. Bald, draft, 2026).
+Desargues, Monge, Simson, Napoleon and Lami in Lean 4* (J. Bald, 2026).
 
 ```bibtex
 @misc{bald2026napoleon,
@@ -99,7 +99,7 @@ Desargues, Monge, Simson, Napoleon and Lami in Lean 4* (J. Bald, draft, 2026).
   title        = {Napoleon's theorem in Lean 4},
   year         = {2026},
   howpublished = {\url{https://github.com/jpbald93/napoleon}},
-  note         = {Lean 4 + Mathlib v4.33.1. Commit: 2b65032ed801810ae47e22843e8d41a45cda27f6}
+  note         = {Lean 4 + Mathlib v4.33.1. Commit: e16592ae04be8e5516a2caef52418c6c60df5165}
 }
 ```
 
