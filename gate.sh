@@ -30,7 +30,8 @@ printf '%s\n' "$build" | tail -3
 [ "$bstatus" -eq 0 ] || { printf '%s\n' "$build"; echo "FAIL: build"; exit 1; }
 root=$(lake env lean "$LIB.lean" 2>&1) || { printf '%s\n' "$root"; echo "FAIL: build (root file)"; exit 1; }
 # The `#print axioms` queries are generated here rather than read from a file in the repo.
-chk=$(mktemp --suffix=.lean -p . .gatecheck_XXXX)
+# Portable (no GNU mktemp); the leading dot keeps it out of the SOURCES glob.
+chk=".gatecheck_$$.lean"
 trap 'rm -f "$chk"' EXIT
 { echo "import $LIB"; for t in $REQUIRED; do echo "#print axioms $t"; done; } > "$chk"
 out=$(lake env lean "$chk" 2>&1); status=$?

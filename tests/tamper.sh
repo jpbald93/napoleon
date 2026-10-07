@@ -11,10 +11,19 @@
 set -u
 export PATH="$HOME/.elan/bin:$PATH"
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/napoleon_tamper_XXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/napoleon_tamper_XXXXXX")"
 C=Napoleon/Basic.lean
 H=Napoleon/Basic.lean
-E='^end Napoleon$'
+EL='end Napoleon'   # the namespace's closing line (defects are planted just before it)
+
+# Portable text helpers (POSIX awk only: no in-place sed, no Python). Strings are passed through
+# the environment, not `awk -v`, so backslashes in them are taken literally. Both fail (return 1,
+# file untouched) if the marker / old text is not found.
+# ins_before_last FILE TEXT MARK: insert TEXT (may contain real newlines) before the last line equal to MARK.
+ins_before_last() { _T="$2" _M="$3" awk '{ L[NR]=$0; if ($0==ENVIRON["_M"]) last=NR } END { if (!last) exit 1; for(i=1;i<=NR;i++){ if(i==last) printf "%s\n", ENVIRON["_T"]; print L[i] } }' "$1" > "$1.$$.tmp" && mv "$1.$$.tmp" "$1" || { rm -f "$1.$$.tmp"; return 1; }; }
+# subst_lit FILE OLD NEW [AFTER]: replace the first literal occurrence of OLD by NEW; with AFTER, only
+# on the first line containing AFTER or the three lines following it.
+subst_lit()      { _O="$2" _N="$3" _A="${4-}" awk '{ A=ENVIRON["_A"]; if(A!="" && !st && index($0,A)>0){ st=1; left=4 } if(!done && (A=="" || left>0)){ p=index($0,ENVIRON["_O"]); if(p>0){ $0=substr($0,1,p-1) ENVIRON["_N"] substr($0,p+length(ENVIRON["_O"])); done=1 } } if(left>0) left--; print } END { if(!done) exit 1 }' "$1" > "$1.$$.tmp" && mv "$1.$$.tmp" "$1" || { rm -f "$1.$$.tmp"; return 1; }; }
 [ -e "$SRC/.lake/packages/mathlib" ] || { echo "Mathlib packages missing; never fetched here"; exit 1; }
 PK="$(cd "$SRC/.lake/packages" && pwd -P)"
 
@@ -28,39 +37,29 @@ mk() {  # fresh copy sharing the prebuilt Mathlib packages
 plant() {
   local d="$WORK/$1"
   case "$1" in
-    sorry)    sed -i "s|$E|theorem bogus : (1:ℕ) = 2 := by sorry\nend Napoleon|" "$d/$C" ;;
-    ax2line)  sed -i "s|$E|axiom\n  cheat_unused : False\nend Napoleon|" "$d/$C" ;;
-    evalfake) sed -i "s|$E|#eval IO.println \"'Napoleon.napoleon_outer' depends on axioms: [propext]\"\nend Napoleon|" "$d/$C" ;;
-    macro)    python3 - "$d/$C" <<'PY'
-import sys, pathlib
-p = pathlib.Path(sys.argv[1]); s = p.read_text()
-m = ("macro_rules\n  | `(#print axioms $id:ident) =>\n"
-     "    `(#print $(Lean.Syntax.mkStrLit s!\"'{id.getId}' depends on axioms: [propext]\"))\n")
-i = s.rindex("end Napoleon"); p.write_text(s[:i] + m + s[i:])
-PY
-              ;;
+    sorry)    ins_before_last "$d/$C" 'theorem bogus : (1:ℕ) = 2 := by sorry' "$EL" ;;
+    ax2line)  ins_before_last "$d/$C" $'axiom\n  cheat_unused : False' "$EL" ;;
+    evalfake) ins_before_last "$d/$C" "#eval IO.println \"'Napoleon.napoleon_outer' depends on axioms: [propext]\"" "$EL" ;;
+    macro)    m="$(cat <<'LEAN'
+macro_rules
+  | `(#print axioms $id:ident) =>
+    `(#print $(Lean.Syntax.mkStrLit s!"'{id.getId}' depends on axioms: [propext]"))
+LEAN
+)"
+              ins_before_last "$d/$C" "$m" "$EL" ;;
     falsehyp) # Drop ‖1 - ω‖ = 1 from apex_equilateral: any unit ω other than e^{±iπ/3} (e.g. ω = -1) breaks the second equality
-              python3 - "$d/$H" <<'PY' || return 1
-import sys, pathlib
-p = pathlib.Path(sys.argv[1]); s = p.read_text()
-old = 'theorem apex_equilateral {ω : ℂ} (h1 : ‖ω‖ = 1) (h2 : ‖1 - ω‖ = 1) (P Q : ℂ)'
-assert s.count(old) == 1
-p.write_text(s.replace(old, 'theorem apex_equilateral {ω : ℂ} (h1 : ‖ω‖ = 1) (h2 : True) (P Q : ℂ)'))
-PY
+              old='theorem apex_equilateral {ω : ℂ} (h1 : ‖ω‖ = 1) (h2 : ‖1 - ω‖ = 1) (P Q : ℂ)'
+              [ "$(grep -cF "$old" "$d/$H")" -eq 1 ] || return 1
+              subst_lit "$d/$H" "$old" 'theorem apex_equilateral {ω : ℂ} (h1 : ‖ω‖ = 1) (h2 : True) (P Q : ℂ)' || return 1
               grep -qF 'theorem apex_equilateral {ω : ℂ} (h1 : ‖ω‖ = 1) (h2 : True) (P Q : ℂ)' "$d/$H" || return 1 ;;
     wrap)     # Tests the output parser alone: the source filter's `axiom` check is switched off in
               # this copy's gate, and a long-named extra axiom is used by a new declaration that the
               # gate is told to check, so that Lean wraps it onto a continuation line.
-              python3 - "$d/$C" <<'PY'
-import sys, pathlib
-p = pathlib.Path(sys.argv[1]); s = p.read_text()
-add = ("axiom zz_extra_axiom_with_a_long_name_for_the_negative_gate_test : True\n"
-       "theorem zz_uses_extra_axiom : True := zz_extra_axiom_with_a_long_name_for_the_negative_gate_test\n\n")
-i = s.rindex("end Napoleon"); p.write_text(s[:i] + add + s[i:])
-PY
+              ins_before_last "$d/$C" $'axiom zz_extra_axiom_with_a_long_name_for_the_negative_gate_test : True\ntheorem zz_uses_extra_axiom : True := zz_extra_axiom_with_a_long_name_for_the_negative_gate_test\n' "$EL" || return 1
               grep -q 'theorem zz_uses_extra_axiom' "$d/$C" || return 1
-              sed -i 's/|\\baxiom\\b//' "$d/gate.sh"
-              sed -i 's|^REQUIRED="|REQUIRED="Napoleon.zz_uses_extra_axiom |' "$d/gate.sh"
+              subst_lit "$d/gate.sh" '|\baxiom\b' '' || return 1
+              subst_lit "$d/gate.sh" 'REQUIRED="' 'REQUIRED="Napoleon.zz_uses_extra_axiom ' || return 1
+              grep -q '^REQUIRED="Napoleon.zz_uses_extra_axiom ' "$d/gate.sh" || return 1
               ! grep -q 'baxiom' "$d/gate.sh" || return 1 ;;
     *) return 1 ;;
   esac
