@@ -105,4 +105,5 @@ Desargues, Monge, Simson, Napoleon and Lami in Lean 4* (J. Bald, 2026).
 
 ## License
 
-Apache 2.0.
+Code: Apache License 2.0 (see `LICENSE`), the licence used by Mathlib. The accompanying paper is
+licensed under CC BY 4.0.
